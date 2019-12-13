@@ -1,16 +1,17 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from models import User,Group
+from flask import Flask,request
+from models import db,User,Group
 import json
 import requests
 
 # Init
 app  = Flask(__name__)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Methods
 
 def authenticate(username):
-    user = User(username, token=User.create_token())
+    print(username)
+    user = {'name' : username, 'token' : User.create_token() }
     existing_user = (
     User.query.filter(User.token == token)
     .one_or_none())
@@ -36,10 +37,17 @@ def authenticate(username):
         )
 
 def check_element_type(element_type):
+    all_types = get_element_types()
+    return element_type in all_types
+
+def get_element_types():
     link = 'https://pokeapi.co/api/v2/type'
+    data = []
     res = requests.get(link)
-    print(res.text)
-    return False
+    jsondata = json.loads(res.text)
+    for i in jsondata['results']:
+      data.append(i['name'])
+    return(data)
 
 # def user_associate(element_type):
 
