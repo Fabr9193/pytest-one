@@ -16,8 +16,7 @@ class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
     name =  db.Column(db.String(20))
     token = db.Column(db.String(64))
-    groups = db.relationship('Group', user_group, db.backref('user_groups'))
-
+    groups = db.relationship('Group', secondary=user_group, backref=db.backref('user_groups'))
     def create_token(self):
         return secrets.token_urlsafe()
 

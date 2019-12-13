@@ -1,5 +1,5 @@
 from config import db
-from models import User
+from models import User,Group
 
 # Data to initialize database with
 users = [
@@ -8,13 +8,13 @@ users = [
     {'name': 'Francois','token': 'faske443721'}
 ]
 
+
 # Create the database
 db.create_all()
-
+db.session.commit()
 # Iterate 
-# for User in users:
-#     print(User['name'])
-#     u = User(token=User['token'], name=User['name'])
-#     db.session.add(u)
+for item in users:
+    u = User(token=item['token'], name=item['name'])
+    db.session.add(u)
 
 db.session.commit()
