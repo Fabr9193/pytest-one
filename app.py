@@ -1,40 +1,58 @@
-from flask import Flask,request
-from models import db,User,Group
+from flask import Flask,request,jsonify
+from config import db
+from models import User, UserSchema, Group, GroupSchema
 import json
 import requests
 
 # Init
 app  = Flask(__name__)
+app.config['SQLALCHEMY_ECHO'] = True
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://atpwoaz1wdt9g74m:ab87fdzdl271b45v@q2gen47hi68k1yrb.chr7pe7iynqr.eu-west-1.rds.amazonaws.com:3306/rxu08ov7dxk37auw'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Methods
 
 def authenticate(username):
     print(username)
-    user = {'name' : username, 'token' : User.create_token() }
-    existing_user = (
-    User.query.filter(User.token == token)
-    .one_or_none())
-    if existing_user is None:
+    user = User()
+    user.name = username
+    user.token = User.create_token()
+   
+    # Add the user to the database
+    db.session.add(user)
+    db.session.commit()
+    return "Success ! Token is : " + user.token , 201
 
-        schema = UserSchema()
-        new_user = schema.load(user, session=db.session).data
+def user_associate(given_token, element_type):
+    user = User.query.filter_by(token=given_token).first()
+    #TODO check if he doesnt already have group
+    if (check_element_type(element_type)):
+        group = Group.query.filter_by(name=element_type).first()
+        if group is None:
+            group = Group()
+            group.name = element_type
+            db.session.add(group)
+        user.groups.append(group)
+    else:
+        return "Type does not exist", 400
+    db.session.commit()
+    return "Added to " + user.name + " the type " + group.name, 200
 
-        # Add the user to the database
-        db.session.add(new_user)
-        db.session.commit()
+def user_remove(given_token, element_type):
+    user = User.query.filter_by(token=given_token).first()
+    #TODO check if he doesnt already have group
+    if (check_element_type(element_type)):
+        group = Group.query.filter_by(name=element_type).first()
+        if group is None:
+            group = Group()
+            group.name = element_type
+            db.session.add(group)
+        user.groups.remove(group)
+    else:
+        return "Type does not exist", 400
+    db.session.commit()
+    return "Removed to " + user.name + " the type " + group.name, 200
 
-        # Serialize and return the newly created user in the response
-        data = schema.dump(new_user).data
-
-        return data, 201
-    else :
-        abort(
-            409,
-            "User with token {token} exists already".format(
-                token
-            ),
-        )
 
 def check_element_type(element_type):
     all_types = get_element_types()
@@ -49,7 +67,16 @@ def get_element_types():
       data.append(i['name'])
     return(data)
 
-# def user_associate(element_type):
+def user_show(given_token):
+    user = User.query.filter_by(token=given_token).first()
+    print(type(user))
+    if user is not None:
+        user_schema = UserSchema()
+        res = user_schema.dump(user)
+        print(res)
+        return jsonify({'user' : res}), 200
+    else:
+        return "Not Found", 404
 
 
 # Routes
@@ -65,17 +92,18 @@ def login():
 @app.route('/api/group/<element_type>/add', methods=['POST'])
 def associate(element_type=None):
     token = request.args['token']
-    return user_associate(element_type, token)
+    return user_associate(element_type=element_type,given_token=token)
 
 @app.route('/api/group/<element_type>/remove', methods=['POST'])
-def remove(elment_type=None):
+def remove(element_type=None):
     token = request.args['token']
-    return User.remove(element_type, token)
+    return user_remove(element_type=element_type,given_token=token)
 
-@app.route('/api/user/me')
+@app.route('/api/user/me', methods=['GET'])
 def show():
     token = request.args['token']
-    return User.show(token)
+    return user_show(given_token=token)
     
 if __name__ == '__main__':
+    db.init_app(app)
     app.run()
