@@ -1,8 +1,8 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from models import User,Group
-
-
+import json
+import requests
 
 # Init
 app  = Flask(__name__)
@@ -34,6 +34,14 @@ def authenticate(username):
                 token
             ),
         )
+
+def check_element_type(element_type):
+    link = 'https://pokeapi.co/api/v2/type'
+    res = requests.get(link)
+    print(res.text)
+    return False
+
+# def user_associate(element_type):
 
 
 # Routes

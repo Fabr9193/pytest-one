@@ -12,9 +12,9 @@ users = [
 # Create the database
 db.create_all()
 db.session.commit()
-# Iterate 
-for item in users:
-    u = User(token=item['token'], name=item['name'])
-    db.session.add(u)
+# # Iterate 
+# for item in users:
+#     u = User(token=item['token'], name=item['name'])
+#     db.session.add(u)
 
-db.session.commit()
+# db.session.commit()
